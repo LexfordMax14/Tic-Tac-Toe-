@@ -1,10 +1,10 @@
-# Mateo Arenas
+# Rocio Severino
 # Lázaro Narváez
-# Micael Covarrubias
+# Maria Jesus Escudero
+
 from mlf_api import RobotClient
 import time
 import cv2
-
 import numpy as np
 
 def show(frame):
@@ -18,7 +18,7 @@ def show_contours(frame, contours):
         cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
     show(frame)
 
-robot = RobotClient("twilight.local")
+robot = RobotClient("spike.local")
 robot.connectWebRTC()
 
 try:
@@ -63,8 +63,6 @@ try:
     q3 = 0
     robot.move_xyz(x, y, z, offset, q3)
 
-
-
 except Exception as e: 
     print(e)
 
@@ -83,9 +81,4 @@ plt.imshow(frame)
 plt.show()
 robot.closeWebRTC()
 """
-
-
-
-
-
 
