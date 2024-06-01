@@ -9,7 +9,7 @@ robot.connectWebRTC()
 
 
 def show(frame):
-    cv2.imshow("robot", frame)
+    cv2.imshow("XD", frame)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
@@ -76,6 +76,25 @@ cambio_coord_mov(150,120,20) #tercera linea lista
 cambio_coord_mov(150,120,30) #levanta lapiz
 cambio_coord_mov(150,190,20) #se posiciona para marcar la cuarta linea
 cambio_coord_mov(360,190,20) #cuarta linea lista
+
+
+
+
+
+
+
+
+
+def casilla_marc(cax,cay,caz): 
+        
+    num_esquina_1=cambio_coord_mov(cax,cay,caz)
+    num_esquina_2=cambio_coord_mov(cax+70,cay,caz)
+    num_esquina_3=cambio_coord_mov(cax+70,cay+70,caz) # Forma una casilla
+    num_esquina_4=cambio_coord_mov(cax,cay+70,caz)
+    num_esquina_5=cambio_coord_mov(cax,cay,caz)
+
+    return None
+
 
 
 
