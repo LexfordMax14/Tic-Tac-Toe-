@@ -1,15 +1,29 @@
 from mlf_api import RobotClient
 import time
 import cv2
-
 import numpy as np
 
-robot = RobotClient("spike.local")
-robot.connectWebRTC()
-robot.get_frame()
-robot.closeWebRTC()
+robot = RobotClient("192.168.0.106")
 
-robot.move_xyz(cx+275,cy+300,0,[30,0,40])
+robot.connectWebRTC()
+
+
+def show(frame):
+    cv2.imshow("robot", frame)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+try:
+    frame = robot.get_frame()
+    cv2.imwrite("frame.jpg", frame)
+    show(frame)    
+except Exception as e: 
+    print(e)
+
+finally:
+    robot.closeWebRTC()
+
+
 
 #------Cambio de coords-----
 def cambio_coord(cx,cy,cz):
@@ -26,16 +40,16 @@ def cambio_coord(cx,cy,cz):
 
 def cambio_coord_mov(cx,cy,cz):
 
-        ypx = (305-cx)*1.55
-        xpx = (434-cy)*1.4
+        ypx = (305-(cx))
+        xpx = (434-(cy))
         x = 50*xpx/65
         y = 50*ypx/65
         z = cz 
         offset = [65, 0, 75]
         q3 = 0
-    
+        print(x,y,z)
         robot.move_xyz(x, y, z, offset, q3)
-
+        time.sleep(5)
         return x,y,z,offset,q3
 
 #-----dibuja tablero------ #X,Y,Z
@@ -61,27 +75,7 @@ cambio_coord_mov(150,120,20) #tercera linea lista
 
 cambio_coord_mov(150,120,30) #levanta lapiz
 cambio_coord_mov(150,190,20) #se posiciona para marcar la cuarta linea
-cambio_coord_mov(360,50,20) #cuarta linea lista
-
-cambio_coord_mov(0,0,60) #vuelve al 0,0
-
-
-
-
-
-
-
-
-
-def casilla_marc(cax,cay,caz): 
-        
-    num_esquina_1=cambio_coord_mov(cax,cay,caz)
-    num_esquina_2=cambio_coord_mov(cax+70,cay,caz)
-    num_esquina_3=cambio_coord_mov(cax+70,cay+70,caz) # Forma una casilla
-    num_esquina_4=cambio_coord_mov(cax,cay+70,caz)
-    num_esquina_5=cambio_coord_mov(cax,cay,caz)
-
-    return None
+cambio_coord_mov(360,190,20) #cuarta linea lista
 
 
 
