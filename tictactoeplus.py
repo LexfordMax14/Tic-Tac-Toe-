@@ -1,10 +1,10 @@
 from mlf_api import RobotClient
-import time
+import time as tiempo
 import cv2
 import numpy as np
 
 # Conexión con el robot
-robot = RobotClient("192.168.0.100")
+robot = RobotClient("192.168.0.107")
 
 # Función para mostrar una imagen
 def show(frame):
@@ -55,52 +55,87 @@ def estatus_tablero():
         # Aplica transformada de Hough para detectar líneas rectas
         lines = cv2.HoughLines(edges, 1, np.pi / 180, threshold=100)
 
-        # Dibuja las líneas detectadas sobre la imagen original
-        for line in lines:
-            rho, theta = line[0]
-            a = np.cos(theta)
-            b = np.sin(theta)
-            x0 = a * rho
-            y0 = b * rho
-            x1 = int(x0 + 1000 * (-b))
-            y1 = int(y0 + 1000 * (a))
-            x2 = int(x0 - 1000 * (-b))
-            y2 = int(y0 - 1000 * (a))
-            cv2.line(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
+        image = cv2.imread('frame.jpg', cv2.IMREAD_GRAYSCALE)
 
-        # Muestra las líneas detectadas en la imagen original
-        show(frame)
+        image = cv2.imread('frame.jpg', cv2.IMREAD_GRAYSCALE)
 
-        # Calcula los puntos extremos de las líneas para delimitar el área del tablero
-        x_coords = []
-        y_coords = []
-        for line in lines:
-            rho, theta = line[0]
-            a = np.cos(theta)
-            b = np.sin(theta)
-            x0 = a * rho
-            y0 = b * rho
-            x1 = int(x0 + 1000 * (-b))
-            y1 = int(y0 + 1000 * (a))
-            x2 = int(x0 - 1000 * (-b))
-            y2 = int(y0 - 1000 * (a))
-            x_coords.extend([x1, x2])
-            y_coords.extend([y1, y2])
+        # Toma una porción de la imagen utilizando ancho y alto
+        h, w = image.shape
+        image = image[0:int(h*0.7), int(w*0.25):int(w*0.7)]
 
-        min_x = min(x_coords)
-        max_x = max(x_coords)
-        min_y = min(y_coords)
-        max_y = max(y_coords)
+        '''
+        Recorte la zona de la hoja primero para eliminar info extra
+        Lo ideal es aislar primero cada color por hsv para reducir mas info!!!
+        '''
+
+        # Erosiona la imagen
+        kernel = np.ones((5, 5), np.uint8)
+        erosion = cv2.erode(image, kernel, iterations=1)
+
+        # Aplica detección de bordes utilizando Canny
+        edges = cv2.Canny(erosion, 100, 200)
+
+        # Aplica la transformada de Hough para detectar líneas
+        lines = cv2.HoughLinesP(edges, 1, np.pi / 180, threshold=50, minLineLength=50, maxLineGap=50)
+
+        # Crea una copia de la imagen original para dibujar líneas
+        line_image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+
+        # Crea una imagen en blanco con las mismas dimensiones
+        line_only_image = np.zeros_like(line_image)
+
+        # Dibuja las líneas en la imagen
+        if lines is not None:
+            slopes = []
+            for line in lines:
+                x1, y1, x2, y2 = line[0]
+                slope = (y2 - y1) / (x2 - x1 + 1e-6)
+                slopes.append(slope)
+                cv2.line(line_image, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                cv2.line(line_only_image, (x1, y1), (x2, y2), (255, 255, 255), 5)
+                print(f"Line: ({x1}, {y1}) -> ({x2}, {y2})")
+
+        # Encuentra el índice de la línea horizontal (pendiente mínima)
+        min_slope = min(slopes)
+        min_slope_index = slopes.index(min_slope)
+
+        # Encuentra el índice de la línea vertical (pendiente máxima)
+        max_slope = max(slopes)
+        max_slope_index = slopes.index(max_slope)
+
+        # Convierte line_only_image a escala de grises
+        line_only_image_gray = cv2.cvtColor(line_only_image, cv2.COLOR_BGR2GRAY)
+
+        # Encuentra contornos
+        contours, hierarchy = cv2.findContours(line_only_image_gray, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+        for cnt in contours:
+            x, y, w, h = cv2.boundingRect(cnt)
+            cv2.rectangle(line_only_image, (x, y), (x+w, y+h), (255, 0, 0), 2)
+
+        # Recorta la imagen a la caja delimitadora externa
+        x, y, w, h = cv2.boundingRect(contours[0])
+        line_only_image_crop = line_only_image[y:y+h, x:x+w]
+
+        while True:
+            # Muestra las imágenes resultantes
+            cv2.imshow('canny', edges)
+            cv2.imshow('image', line_image)
+            cv2.imshow('line_only_image', line_only_image)
+            cv2.imshow('line_only_image_crop', line_only_image_crop)
+
+            # Espera para cerrar la ventana al presionar 'q'
+            if cv2.waitKey() & 0xFF == ord('q'):
+                break
+
+        cv2.destroyAllWindows()
 
         # Recorta la imagen del área del tablero
-        cropped_image = frame[min_y:max_y, min_x:max_x]
-        show(cropped_image)
+        show(line_only_image_crop)
 
-        # Guarda la imagen recortada
-        cv2.imwrite("cropped_image.jpg", cropped_image)
 
         # Convierte la imagen a BGR
-        rgbImage = cv2.cvtColor(cropped_image, cv2.COLOR_RGB2BGR)
+        rgbImage = cv2.cvtColor(line_only_image_crop, cv2.COLOR_RGB2BGR)
 
         # Divide la imagen del tablero en 9 celdas
         cells = divide_image(rgbImage, 3, 3)
@@ -159,8 +194,7 @@ def cambio_coord_mov(cx, cy, cz):
 
     print(x, y, z)
     robot.move_xyz(x, y, z, offset, q3)
-    robot.move_xyz(0, 250, 30, offset, q3)
-    time.sleep(2)
+    tiempo.sleep(2)
     return x, y, z, offset, q3
 
 # Funciones para marcar las casillas específicas
@@ -332,7 +366,7 @@ class Node:
         self.children.append(node)
 
 from tictactoe import TicTacToe, winner
-from time_decorator import time
+from tiempo_decorator import time
 inf = float('infinity')
 
 @time('Tiempo de decisión:')
@@ -394,70 +428,11 @@ def next_states(state, turn):
         return [state[:i] + [turn] + state[i + 1:] for i in indices]
     return []
 
-# Ejecución del juego
+#Ejecución del juego
+
+cambio_coord_mov(20,200,30)
+
 if __name__ == '__main__':
     initial_board = estatus_tablero()
     g = TicTacToe(npc_policy=MiniMaxTree, board=initial_board)
     g.run()
-
-
-#-----Proceso robot------
-
-#-----dibuja tablero------ #X,Y,Z
-cambio_coord_mov(0,0,0)
-cambio_coord_mov(150,50,-10)  #levantar lapiz
-cambio_coord_mov(150,50,-40)  #Esquina Arriba a la izquierda
-cambio_coord_mov(150,50,-10)  #levantar lapiz
-cambio_coord_mov(360,50,-10)  
-cambio_coord_mov(360,50,-40)
-cambio_coord_mov(360,50,-10)  
-cambio_coord_mov(360,260,-10)
-cambio_coord_mov(360,260,-45)
-cambio_coord_mov(360,260,-10)
-cambio_coord_mov(150,260,-10)
-cambio_coord_mov(150,260,-40) #Izquierda arriba, derecha arriba, derecha abajo, izquierda abajo y cierra el cuadrado
-cambio_coord_mov(150,260,-10)
-
-#-----dibuja casillas-----
-
-cambio_coord_mov(220,50,-10)
-cambio_coord_mov(220,50,-40)#se posiciona para marcar la primera linea
-cambio_coord_mov(220,50,-10)
-cambio_coord_mov(290,50,-10)
-cambio_coord_mov(290,50,-40) #primera linea lista
-cambio_coord_mov(290,50,-10)
-
-cambio_coord_mov(220,120,-10)
-cambio_coord_mov(220,120,-40)  #se posiciona para marcar la primera linea
-cambio_coord_mov(220,120,-10)
-cambio_coord_mov(290,120,-10)
-cambio_coord_mov(290,120,-40)
-cambio_coord_mov(220,50,-10)
-
-cambio_coord_mov(220,190,-10)
-cambio_coord_mov(220,190,-40)  #se posiciona para marcar la primera linea
-cambio_coord_mov(220,190,-10)
-cambio_coord_mov(290,190,-10)
-cambio_coord_mov(290,190,-45)
-cambio_coord_mov(290,190,-10)
-
-cambio_coord_mov(220,260,-10)
-cambio_coord_mov(220,260,-40)  #se posiciona para marcar la primera linea
-cambio_coord_mov(220,260,-10)
-cambio_coord_mov(290,260,-10)
-cambio_coord_mov(290,260,-40)
-cambio_coord_mov(290,260,-10)
-
-cambio_coord_mov(150,120,-10)
-cambio_coord_mov(150,120,-40)  #se posiciona para marcar la primera linea
-cambio_coord_mov(150,120,-10)
-cambio_coord_mov(360,120,-10)
-cambio_coord_mov(360,120,-40)
-cambio_coord_mov(360,120,-10)
-
-cambio_coord_mov(150,190,-10)
-cambio_coord_mov(150,190,-40)  #se posiciona para marcar la primera linea
-cambio_coord_mov(150,190,-10)
-cambio_coord_mov(360,190,-10)
-cambio_coord_mov(360,190,-40)
-cambio_coord_mov(360,190,-10)
