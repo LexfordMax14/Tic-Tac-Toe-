@@ -165,50 +165,67 @@ def cambio_coord_mov(cx, cy, cz):
     return x, y, z, offset, q3
 
 # Funciones para marcar las casillas específicas
+
+def dibujar_x(x, y, z):
+
+    half_size = 70 // 2
+    pt1 = (x - half_size, y - half_size, z)
+    pt2 = (x + half_size, y + half_size, z)
+    pt3 = (x - half_size, y + half_size, z)
+    pt4 = (x + half_size, y - half_size, z)
+    cambio_coord_mov(pt1)
+    cambio_coord_mov(x,y,z)
+    cambio_coord_mov(pt2)
+    cambio_coord_mov(x,y,z)
+    cambio_coord_mov(pt3)
+    cambio_coord_mov(x,y,z)
+    cambio_coord_mov(pt4)
+
 def marca_casilla_1():
     cambio_coord_mov(290, 190, 20)
-    cambio_coord_mov(185, 85, -55)
+    dibujar_x(185, 85, -55)
     return None
 
 def marca_casilla_2():
     cambio_coord_mov(290, 190, 20)
-    cambio_coord_mov(255, 85, -55)
+    dibujar_x(255, 85, -55)
     return None
 
 def marca_casilla_3():
     cambio_coord_mov(290, 190, 20)
-    cambio_coord_mov(325, 85, -55)
+    dibujar_x(325, 85, -55)
     return None
 
 def marca_casilla_4():
     cambio_coord_mov(290, 190, 20)
-    cambio_coord_mov(185, 155, -40)
+    dibujar_x(185, 155, -40)
     return None
 
 def marca_casilla_5():
     cambio_coord_mov(290, 190, 20)
-    cambio_coord_mov(255, 155, -40)
+    dibujar_x(255, 155, -40)
     return None
 
 def marca_casilla_6():
     cambio_coord_mov(290, 190, 20)
-    cambio_coord_mov(325, 155, -40)
+    dibujar_x(325, 155, -40)
     return None
 
 def marca_casilla_7():
     cambio_coord_mov(290, 190, 20)
-    cambio_coord_mov(185, 225, -25)
+    dibujar_x(185, 225, -25)
     return None
 
 def marca_casilla_8():
     cambio_coord_mov(290, 190, 20)
-    cambio_coord_mov(255, 225, -25)
+    dibujar_x(255, 225, -25)
     return None
 
 def marca_casilla_9():
     cambio_coord_mov(290, 190, 20)
-    cambio_coord_mov(325, 225, -25)
+    dibujar_x(325, 225, -25)
     return None
+
 
 # Implementación del algoritmo MiniMax
 
