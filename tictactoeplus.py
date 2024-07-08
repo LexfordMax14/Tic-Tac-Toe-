@@ -21,27 +21,20 @@ def show_contours(frame, contours):
     show(frame)
 
 # Función para dividir la imagen en una cuadrícula de celdas
-def divide_image(image, rows, cols):
-    height, width = image.shape[:2]
-    row_height = height // rows
-    col_width = width // cols
-    cells = []
-    for i in range(rows):
-        for j in range(cols):
-            x1, y1 = j * col_width, i * row_height
-            x2, y2 = x1 + col_width, y1 + row_height
-            cell = image[y1:y2, x1:x2]
-            cells.append(cell)
-    return cells
 
 # Función para verificar si una celda está ocupada basado en un rango de color
 def is_cell_occupied(cell, lower_color, upper_color):
+    show(cell)
     mask = cv2.inRange(cell, lower_color, upper_color)
+    show(mask)
     return cv2.countNonZero(mask) > 0
+
 
 # Función para capturar y procesar el estado del tablero
 def estatus_tablero():
     try:
+        robot.set_joints(0, 90, 90)
+
         # Captura la imagen del tablero del robot
         frame = robot.get_frame()
         cv2.imwrite("frame.jpg", frame)
@@ -93,21 +86,15 @@ def estatus_tablero():
         contours, hierarchy = cv2.findContours(cv2.cvtColor(line_only_image, cv2.COLOR_BGR2GRAY), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
         for cnt in contours:
+            cells=[]
             x, y, w, h = cv2.boundingRect(cnt)
-            cv2.rectangle(line_only_image, (x, y), (x + w, y + h), (255, 0, 0), 2)
 
-        # Recorta la imagen a la caja delimitadora externa
-        x, y, w, h = cv2.boundingRect(contours[0])
-        line_only_image_crop = line_only_image[y:y + h, x:x + w]
-
-        show(line_only_image_crop)
-
-        # Convierte la imagen a BGR
-        rgbImage = cv2.cvtColor(line_only_image_crop, cv2.COLOR_RGB2BGR)
-
-        # Divide la imagen del tablero en 9 celdas
-        cells = divide_image(rgbImage, 3, 3)
-
+            if cnt <1000:
+                cell=cv2.rectangle(line_only_image, (x, y), (x + w, y + h), (255, 0, 0), 2)
+                cell = image[y:y+h, x:x+w]
+                cells.append(cell)
+            
+    
         # Define los límites de color para detectar las marcas
         lower_color_x = np.array([56, 31, 0])  # Ejemplo de color para "X"
         upper_color_x = np.array([122, 141, 83])
@@ -115,10 +102,15 @@ def estatus_tablero():
         upper_color_o = np.array([61, 128, 145])
 
         # Procesa cada celda para determinar si está ocupada
+
+        is_cell_occupied
         board_status = []
         for idx, cell in enumerate(cells):
-            occupied_x = is_cell_occupied(cell, lower_color_x, upper_color_x)
-            occupied_o = is_cell_occupied(cell, lower_color_o, upper_color_o)
+            
+            hsvImage = cv2.cvtColor(cell, cv2.COLOR_BGR2HSV)
+
+            occupied_x = is_cell_occupied(hsvImage, lower_color_x, upper_color_x)
+            occupied_o = is_cell_occupied(hsvImage, lower_color_o, upper_color_o)
             if occupied_x:
                 board_status.append(1)  # X
             elif occupied_o:
@@ -173,57 +165,55 @@ def dibujar_x(x, y, z):
     pt2 = (x + half_size, y + half_size, z)
     pt3 = (x - half_size, y + half_size, z)
     pt4 = (x + half_size, y - half_size, z)
-    cambio_coord_mov(pt1)
-    cambio_coord_mov(x,y,z)
-    cambio_coord_mov(pt2)
-    cambio_coord_mov(x,y,z)
-    cambio_coord_mov(pt3)
-    cambio_coord_mov(x,y,z)
-    cambio_coord_mov(pt4)
+
+
+    cx1, cy1, cz1 = pt1
+    cx2, cy2, cz2 = pt2
+    cx3, cy3, cz3 = pt3
+    cx4, cy4, cz4 = pt4
+
+    cambio_coord_mov(cx1, cy1, cz1)
+    cambio_coord_mov(x, y, z)
+    cambio_coord_mov(cx2, cy2, cz2)
+    cambio_coord_mov(x, y, z)
+    cambio_coord_mov(cx3, cy3, cz3)
+    cambio_coord_mov(x, y, z)
+    cambio_coord_mov(cx4,cy4,cz4)
 
 def marca_casilla_1():
-    cambio_coord_mov(290, 190, 20)
-    dibujar_x(185, 85, -55)
+    cambio_coord_mov(185, 85, -55)
     return None
 
 def marca_casilla_2():
-    cambio_coord_mov(290, 190, 20)
-    dibujar_x(255, 85, -55)
+    cambio_coord_mov(255, 85, -55)
     return None
 
 def marca_casilla_3():
-    cambio_coord_mov(290, 190, 20)
-    dibujar_x(325, 85, -55)
+    cambio_coord_mov(325, 85, -55)
     return None
 
 def marca_casilla_4():
-    cambio_coord_mov(290, 190, 20)
-    dibujar_x(185, 155, -40)
+    cambio_coord_mov(185, 155, -40)
     return None
 
 def marca_casilla_5():
-    cambio_coord_mov(290, 190, 20)
-    dibujar_x(255, 155, -40)
+    cambio_coord_mov(255, 155, -40)
     return None
 
 def marca_casilla_6():
-    cambio_coord_mov(290, 190, 20)
-    dibujar_x(325, 155, -40)
+    cambio_coord_mov(325, 155, -40)
     return None
 
 def marca_casilla_7():
-    cambio_coord_mov(290, 190, 20)
-    dibujar_x(185, 225, -25)
+    cambio_coord_mov(185, 225, -25)
     return None
 
 def marca_casilla_8():
-    cambio_coord_mov(290, 190, 20)
-    dibujar_x(255, 225, -25)
+    cambio_coord_mov(255, 225, -25)
     return None
 
 def marca_casilla_9():
-    cambio_coord_mov(290, 190, 20)
-    dibujar_x(325, 225, -25)
+    cambio_coord_mov(325, 225, -25)
     return None
 
 
@@ -320,6 +310,9 @@ def jugar_gato():
 
         # Iteración del juego hasta que haya un ganador o empate
         while not terminal(board_status):
+            
+            robot.set_joints(0, 90, 90)
+
             # Captura y procesamiento del estado actual del tablero
             board_status = estatus_tablero()
             if terminal(board_status):
